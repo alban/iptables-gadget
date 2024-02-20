@@ -1,0 +1,68 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: gadget-demo
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: hello
+  namespace: gadget-demo
+  labels:
+    role: demo
+spec:
+  containers:
+  - name: hello
+    image: busybox
+    command: [ "sleep", "100000" ]
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-egress
+  namespace: gadget-demo
+spec:
+  podSelector:
+    matchLabels:
+      role: demo
+  policyTypes:
+  - Egress
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-dns-egress
+  namespace: gadget-demo
+spec:
+  podSelector:
+    matchLabels:
+      role: demo
+  policyTypes:
+  - Egress
+  egress:
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: kube-system
+      podSelector:
+        matchLabels:
+          k8s-app: kube-dns
+    ports:
+      - port: 53
+        protocol: UDP
+      - port: 53
+        protocol: TCP
+---
+kind: NetworkPolicy
+apiVersion: networking.k8s.io/v1
+metadata:
+  name: allow-https-egress
+  namespace: gadget-demo
+spec:
+  podSelector:
+    matchLabels:
+      role: demo
+  egress:
+  - ports:
+    - port: 443
